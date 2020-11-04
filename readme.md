@@ -1,7 +1,7 @@
----
 title: 撰寫 Hadoop MapReduce Program 紀錄
 date: 2020-11-05 06:00:00
 tags: 
+
 - Hadoop
 - Cloud-Computing
 categories: [ Hadoop ]
@@ -9,8 +9,6 @@ keywords:
 - Hadoop
 - MapReduce
 description: "撰寫 Hadoop MapReduce Program in python 紀錄"
-
----
 
 
 
@@ -505,6 +503,5 @@ hdfs dfs -rm -r -f /workdir_output
 <div style="text-align: center">End</div>
 -----------------------------------
 
-![](https://i.imgur.com/888jFLr.gif)
 
-<div style="text-align: right">2020.11.05</div>
+
