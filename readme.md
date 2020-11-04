@@ -1,16 +1,3 @@
-title: 撰寫 Hadoop MapReduce Program 紀錄
-date: 2020-11-05 06:00:00
-tags: 
-
-- Hadoop
-- Cloud-Computing
-categories: [ Hadoop ]
-keywords:  
-- Hadoop
-- MapReduce
-description: "撰寫 Hadoop MapReduce Program in python 紀錄"
-
-
 
 講真的，我不喜歡那隻黃色大象，所以請容許我把它碼掉。
 (好像碼的還不錯 ...)
