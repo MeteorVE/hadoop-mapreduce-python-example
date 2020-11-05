@@ -228,6 +228,8 @@ hadoop-master:41117             RUNNING hadoop-master:8042                      
 
 一個是告訴 mapreduce 你用的語言，一個是 Linux 編碼老問題。
 
+## Python 版本
+
 ```python mapper.py
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
@@ -296,6 +298,208 @@ Mapper 的輸出會是 :
 ```
 
 Reducer 就是去讀他們然後統計就好了。
+
+## Java 版本
+
+如果想要編譯成 jar 檔案來執行
+必須寫在一個檔案內並且編譯時必須有 ``org.apache.hadoop`` 的包。
+
+```java
+import java.io.IOException;
+
+import java.util.*;
+import java.time.LocalDateTime; // Import the LocalDateTime class
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter; // Import the DateTimeFormatter class
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.TextOutputFormat;
+
+public class Parselog {
+
+    public static class Map extends MapReduceBase implements
+            Mapper<LongWritable, Text, Text, IntWritable> {
+
+        @Override
+        public void map(LongWritable key, Text value, OutputCollector<Text, IntWritable> output, Reporter reporter)
+                throws IOException {
+
+                String line = value.toString();
+                StringTokenizer tokenizer = new StringTokenizer(line);
+
+                // Scanner scanner = new Scanner(System.in);
+                while (tokenizer.hasMoreTokens()) {
+
+                    String t = scanner.nextToken().split("- - \\[")[1].split(" -")[0];
+                    SimpleDateFormat accesslogDateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss", new Locale("es","ES"));
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy-mm-dd HH:00:00.000\t1");
+                    // %Y-%m-%d %H:00:00.000
+
+                    Date result = null;
+                    String result_s = null;
+                    try {
+                            result = accesslogDateFormat.parse(t);
+                            result_s = outputDateFormat.format(result);
+                            output.collect(result_s, new IntWritable(1)); //System.out.println(result_s);
+
+                    }catch(ParseException e) {
+                            e.printStackTrace();
+                    }// End of Try Catch
+
+                }// End of while
+
+        }
+    }
+
+    public static class Reduce extends MapReduceBase implements
+            Reducer<Text, IntWritable, Text, IntWritable> {
+
+        @Override
+        public void reduce(Text key, Iterator<IntWritable> values,
+                OutputCollector<Text, IntWritable> output, Reporter reporter)
+                throws IOException {
+
+            Map<String, Integer> map = new HashMap<String, Integer>();
+
+            // Scanner scanner = new Scanner(System.in);
+            while (values.hasNext()) {
+
+                String data[] = values.next().split("\t");
+
+              // System.out.println("debug: " +  data[0] + ":" + data[1]);
+
+              if( map.get(data[0]) != null ){
+                map.put(data[0], map.get(data[0]) + 1);  
+              }else{
+                map.put(data[0], 1);
+              }
+            }// End of while
+
+            for (String key : map.keySet()) {
+              // use the key here
+              output.collect(key+ ":" + map.get(key) , new IntWritable(sum)); //System.out.println(key+ ":" + map.get(key));
+
+            }// End of for
+            
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        JobConf conf = new JobConf(WordCount.class);
+        conf.setJobName("parselog");
+
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(IntWritable.class);
+
+        conf.setMapperClass(Map.class);
+        conf.setReducerClass(Reduce.class);
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(TextOutputFormat.class);
+
+        FileInputFormat.setInputPaths(conf, new Path(args[0]));
+        FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+
+        JobClient.runJob(conf);
+
+    }
+}
+```
+
+如果一樣分成 Mapper 和 Reducer 兩個檔案的話，範例如下
+
+```java Mapper.java
+import java.util.*;
+import java.time.LocalDateTime; // Import the LocalDateTime class
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter; // Import the DateTimeFormatter class
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+
+public class Mapper {
+  public static void main(String[] args){
+  	
+  	//String s = "64.242.88.10 - - [07/Mar/2004:16:10:02 -0800] \"GET /mailman/listinfo/hsdivision HTTP/1.1\" 200 6291";
+
+  	Scanner scanner = new Scanner(System.in);
+  	while (scanner.hasNext()) {
+
+	  	String t = scanner.nextLine().split("- - \\[")[1].split(" -")[0];
+  		SimpleDateFormat accesslogDateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss", new Locale("es","ES"));
+  		SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy-mm-dd HH:00:00.000\t1");
+  		// %Y-%m-%d %H:00:00.000
+
+  		Date result = null;
+  		String result_s = null;
+  		try {
+  				result = accesslogDateFormat.parse(t);
+  				result_s = outputDateFormat.format(result);
+  				System.out.println(result_s);
+
+		}catch(ParseException e) {
+				e.printStackTrace();
+		}// End of Try Catch
+
+	}// End of while
+
+  }//End of main
+}//End of FirstJavaProgram Class
+```
+
+```java Reducer.java
+import java.util.*;
+
+public class Reducer {
+  public static void main(String[] args){
+  	
+  	//String s = "64.242.88.10 - - [07/Mar/2004:16:10:02 -0800] \"GET /mailman/listinfo/hsdivision HTTP/1.1\" 200 6291";
+
+    Map<String, Integer> map = new HashMap<String, Integer>();
+
+  	Scanner scanner = new Scanner(System.in);
+  	while (scanner.hasNext()) {
+
+	  	String data[] = scanner.nextLine().split("\t");
+
+      // System.out.println("debug: " +  data[0] + ":" + data[1]);
+
+      if( map.get(data[0]) != null ){
+        map.put(data[0], map.get(data[0]) + 1);  
+      }else{
+        map.put(data[0], 1);
+      }
+	}// End of while
+
+  for (String key : map.keySet()) {
+    // use the key here
+    System.out.println(key+ ":" + map.get(key));
+
+  }
+
+  }//End of main
+}//End of FirstJavaProgram Class
+```
+
+後面執行的語法搭配以下使用
+
+```bash
+hadoop jar /opt/hadoop/share/hadoop/tools/lib/hadoop-*streaming*.jar -files Mapper.class,Reducer.class -input /workdir/log.txt -output /workdir_output -mapper "java Mapper" -reducer "java Reducer"
 
 # 讓 MapReduce 在 Hadoop 上執行
 
